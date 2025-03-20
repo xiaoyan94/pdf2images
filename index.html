@@ -5,10 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>PDF 转高清图片</title>
+    <script>document.title = i18n[getCurrentLanguage()].title;</script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="js/i18n.js"></script>
     <style>
         :root {
             --primary-color: #2196f3;
@@ -92,12 +94,13 @@
 <body>
     <nav class="container-fluid">
         <ul>
-            <li><strong>PDF 转高清 PNG</strong></li>
+            <li><strong data-i18n="main.title">PDF 转高清 PNG</strong></li>
         </ul>
         <ul>
-            <li><a href="#">首页</a></li>
-            <li><a href="#">帮助</a></li>
-            <li><button id="themeToggle">🌙 切换模式</button></li>
+            <li><a href="#" data-i18n="nav.home">首页</a></li>
+            <li><a href="#" data-i18n="nav.help">帮助</a></li>
+            <li><button id="themeToggle" data-i18n="nav.toggleTheme">🌙 切换模式</button></li>
+            <li><button id="langToggle" data-i18n="nav.language">🌐 Language</button></li>
         </ul>
     </nav>
     
@@ -105,10 +108,10 @@
         <div class="grid">
             <section>
                 <hgroup>
-                    <h2>PDF 转高清 PNG</h2>
-                    <h3>上传 PDF 并转换为高分辨率图片</h3>
+                    <h2 data-i18n="main.title">PDF 转高清 PNG</h2>
+                    <h3 data-i18n="main.subtitle">上传 PDF 并转换为高分辨率图片</h3>
                 </hgroup>
-                <p>选择 PDF 文件，我们会将其每一页转换为高清 PNG 图片。</p>
+                <p data-i18n="main.description">选择 PDF 文件，我们会将其每一页转换为高清 PNG 图片。</p>
                 <input type="file" id="pdfUpload" accept="application/pdf">
                 <div id="downloadButtons" class="download-buttons"></div>
                 <div id="pdfPreview"></div>
@@ -117,7 +120,7 @@
     </main>
     
     <footer class="container">
-        <small><a href="#">隐私政策</a> • <a href="#">联系我们</a></small>
+        <small><a href="#" data-i18n="footer.privacy">隐私政策</a> • <a href="#" data-i18n="footer.contact">联系我们</a></small>
     </footer>
     
     <script>
@@ -132,6 +135,14 @@
             setTheme(currentTheme === 'dark' ? 'light' : 'dark');
         });
         setTheme(localStorage.getItem('theme') || 'light');
+        
+        // Initialize language
+        const langToggle = document.getElementById('langToggle');
+        langToggle.addEventListener('click', () => {
+            const currentLang = getCurrentLanguage();
+            setLanguage(currentLang === 'zh' ? 'en' : 'zh');
+        });
+        setLanguage(getCurrentLanguage());
         
         pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
         
@@ -150,7 +161,11 @@
                     buttonsDiv.innerHTML = '';
                     
                     const downloadAllBtn = document.createElement('button');
-                    downloadAllBtn.textContent = `下载 ${fileName}.zip`;
+                    const currentLang = getCurrentLanguage();
+                    const text = i18n[currentLang];
+                    downloadAllBtn.setAttribute('data-i18n', 'download.all');
+                    downloadAllBtn.setAttribute('data-i18n-params', JSON.stringify({ filename: fileName }));
+                    downloadAllBtn.textContent = getI18nValue('download.all', currentLang, { filename: fileName });
                     downloadAllBtn.style.display = 'none';
                     buttonsDiv.appendChild(downloadAllBtn);
                     
@@ -159,7 +174,9 @@
                     
                     for (let i = 0; i < pdf.numPages; i++) {
                         let btn = document.createElement('a');
-                        btn.textContent = `第 ${i + 1} 页加载中...`;
+                        btn.setAttribute('data-i18n', 'download.loading');
+                        btn.setAttribute('data-i18n-params', JSON.stringify({ page: i + 1 }));
+                        btn.textContent = getI18nValue('download.loading', currentLang, { page: i + 1 });
                         btn.style.pointerEvents = 'none';
                         downloadLinks[i] = btn;
                         buttonsDiv.appendChild(btn);
@@ -179,7 +196,10 @@
                         const imageData = canvas.toDataURL('image/png');
                         images.push({ name: `${fileName}-第${i + 1}页.png`, data: imageData });
                         
-                        downloadLinks[i].textContent = `下载 ${fileName}-第${i + 1}页.png`;
+                        downloadLinks[i].textContent = text.download.page.replace('{filename}', fileName).replace('{page}', i + 1);
+                        downloadLinks[i].setAttribute('data-i18n', 'download.page');
+                        downloadLinks[i].setAttribute('data-i18n-params', JSON.stringify({ filename: fileName, page: i + 1 }));
+                        downloadLinks[i].textContent = getI18nValue('download.page', currentLang, { filename: fileName, page: i + 1 });
                         downloadLinks[i].href = imageData;
                         downloadLinks[i].download = `${fileName}-第${i + 1}页.png`;
                         downloadLinks[i].style.pointerEvents = 'auto';
